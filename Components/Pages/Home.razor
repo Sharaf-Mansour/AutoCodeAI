@@ -3,7 +3,6 @@
 @attribute [StreamRendering]
 
  <EditForm Enhance Model="this" class="fs-2">
-
     <div class="row">
         <div style="width: fit-content">
             <label for="message">Message:</label>
@@ -18,8 +17,7 @@
 
     <div class="row mt-5">
         <div class="col">
-
-<pre style="white-space: pre-wrap;word-wrap: break-word;">AI: @(response is "" or null ? wait : response)</pre>
+            <pre style="white-space: pre-wrap;word-wrap: break-word;">AI: @(response is "" or null ? wait : response)</pre>
         </div>
     </div>
 </EditForm>

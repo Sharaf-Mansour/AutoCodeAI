@@ -1,0 +1,76 @@
+﻿@page "/"
+@using OllamaSharp
+@attribute [StreamRendering]
+
+ <EditForm Enhance Model="this" class="fs-2">
+
+    <div class="row">
+        <div style="width: fit-content">
+            <label for="message">Message:</label>
+        </div>
+        <div class="w-75">
+            <InputText type="text" id="message" class="form-control fs-3" @bind-Value="message" />
+        </div>
+        <div style="width: fit-content">
+            <button type="submit" class="btn btn-primary p-3 bt-lg" @onclick="DoAiStuff">Ask AI</button>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col">
+
+<pre style="white-space: pre-wrap;word-wrap: break-word;">AI: @(response is "" or null ? wait : response)</pre>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    string? message;
+    string response;
+    string wait = "Ask me anything!";
+    OllamaApiClient Ollama = new("http://localhost:11434") { SelectedModel = "llama3" };
+    ConversationContext context = null;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var json = await System.IO.File.ReadAllTextAsync("context.json");
+            context = System.Text.Json.JsonSerializer.Deserialize<ConversationContext>(json);
+
+        }
+        catch (Exception)
+        {
+            context = await Ollama.StreamCompletion("", context, async stream => Console.Write(stream.Response));
+        }
+     }
+    
+    async Task DoAiStuff()
+    {
+        var localContext = context;
+        response = "";
+        wait = "Thinking.";
+        bool ShouldRender = true;
+        var completionTask = Task.Run(async () =>
+        {
+            context = await Ollama.StreamCompletion(message, context, async stream =>
+            {
+                ShouldRender = false;
+                response += stream.Response;
+                await InvokeAsync(StateHasChanged);
+            });
+            // store context to a local file using system.io and system.text.json
+            var json = System.Text.Json.JsonSerializer.Serialize(context);
+            await System.IO.File.WriteAllTextAsync("context.json", json);
+        });
+
+        var delayTask = Task.Run(async () =>
+        {
+            while(ShouldRender){
+            wait += ".";
+            await Task.Delay(100);
+            await InvokeAsync(StateHasChanged);
+            }
+        });
+          await Task.WhenAny(completionTask);
+    }
+}   

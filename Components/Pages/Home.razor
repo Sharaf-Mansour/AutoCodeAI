@@ -1,49 +1,68 @@
 ﻿@page "/"
 @using OllamaSharp
+@using System.Text.RegularExpressions
 @attribute [StreamRendering]
 
- <EditForm Enhance Model="this" class="fs-2">
+<EditForm Enhance Model="this" class="fs-2 bg-dark">
     <div class="row">
         <div style="width: fit-content">
             <label for="message">Message:</label>
         </div>
         <div class="w-75">
-            <InputText type="text" id="message" class="form-control fs-3" @bind-Value="message" />
+            <InputText type="text" id="message" class="form-control  text-white bg-dark fs-3" @bind-Value="message" />
         </div>
         <div style="width: fit-content">
-            <button type="submit" class="btn btn-primary p-3 bt-lg" @onclick="DoAiStuff">Ask AI</button>
+            <button type="submit" class="btn btn-primary text-black  p-3 bt-lg" @onclick="DoAiStuff">Ask AI</button>
         </div>
     </div>
 
     <div class="row mt-5">
         <div class="col">
-            <pre style="white-space: pre-wrap;word-wrap: break-word;">AI: @(response is "" or null ? wait : response)</pre>
+
+            <div style="white-space: pre-wrap;word-wrap: break-word;"> @((MarkupString)(response is "" or null ? (MarkupString)wait : (processedString is null) ? (MarkupString)response : processedString)) </div>
         </div>
     </div>
 </EditForm>
 
-@code {
+@code 
+{
     string? message;
     string response;
     string wait = "Ask me anything!";
-    OllamaApiClient Ollama = new("http://localhost:11434") { SelectedModel = "llama3" };
+    OllamaApiClient Ollama = new("http://localhost:11434") { SelectedModel = "codestral" };
     ConversationContext context = null;
+    private RenderFragment? RenderChild;
+    private MarkupString? processedString;
+    public MarkupString ParseHtmlContent(string input)
+    {
+        var pattern = @"```(.*?)\n(.*?)```";
+        var regex = new Regex(pattern, RegexOptions.Singleline);
+        var result = regex.Replace(input, match =>
+        {
+            var lang = match.Groups[1].Value.Trim();
+            var code = match.Groups[2].Value.Trim();
+            return $"<pre><code class=\"{lang}\">{System.Net.WebUtility.HtmlEncode(code)}</code></pre>";
+        });
+
+        return new MarkupString(result);
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var json = await System.IO.File.ReadAllTextAsync("context.json");
             context = System.Text.Json.JsonSerializer.Deserialize<ConversationContext>(json);
-
         }
         catch (Exception)
         {
             context = await Ollama.StreamCompletion("", context, async stream => Console.Write(stream.Response));
         }
-     }
-    
+    }
+
     async Task DoAiStuff()
     {
+        processedString = null;
         var localContext = context;
         response = "";
         wait = "Thinking.";
@@ -56,19 +75,32 @@
                 response += stream.Response;
                 await InvokeAsync(StateHasChanged);
             });
-            // store context to a local file using system.io and system.text.json
+            processedString = ParseHtmlContent(response);
             var json = System.Text.Json.JsonSerializer.Serialize(context);
             await System.IO.File.WriteAllTextAsync("context.json", json);
         });
 
+
         var delayTask = Task.Run(async () =>
         {
-            while(ShouldRender){
-            wait += ".";
-            await Task.Delay(100);
-            await InvokeAsync(StateHasChanged);
+            while (ShouldRender)
+            {
+                wait += ".";
+                await Task.Delay(100);
+                await InvokeAsync(StateHasChanged);
             }
         });
-          await Task.WhenAny(completionTask);
+
+        await Task.WhenAny(completionTask);
+        await Task.WhenAny(delayTask);
+        await Task.WhenAll(completionTask, delayTask);
+        await InvokeAsync(StateHasChanged);
+        var timer = new System.Timers.Timer(10);
+        timer.Elapsed += async (sender, e) =>
+        {
+            timer.Stop();
+            await _js.InvokeVoidAsync("highlightSnippet");
+        };
+        timer.Start();
     }
-}   
+}

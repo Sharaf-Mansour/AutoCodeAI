@@ -7,14 +7,16 @@
     <base href="/" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
-    <link rel="stylesheet" href="AutoCodeAI.styles.css" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+@*      <link rel="stylesheet" href="AutoCodeAI.styles.css" />
+ *@    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/dark.min.css">
     <HeadOutlet  @rendermode="InteractiveServer" />
 </head>
 
-<body>
+<body class="bg-dark  text-white">
     <Routes  @rendermode="InteractiveServer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+     <script>window.highlightSnippet = () => hljs.highlightAll();</script>
     <script src="_framework/blazor.web.js"></script>
-</body>
-
+ </body>
 </html>

@@ -29,7 +29,7 @@
     string? message;
     string response;
     string wait = "Ask me anything!";
-    OllamaApiClient Ollama = new("http://localhost:11434") { SelectedModel = "codestral" };
+    OllamaApiClient Ollama = new("http://localhost:11434") { SelectedModel = "llama3" }; //"codestral" 
     ConversationContext context = null;
     private RenderFragment? RenderChild;
     private MarkupString? processedString;

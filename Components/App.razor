@@ -16,7 +16,22 @@
 <body class="bg-dark  text-white">
     <Routes  @rendermode="InteractiveServer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-     <script>window.highlightSnippet = () => hljs.highlightAll();</script>
+     <script>
+         window.highlightSnippet = () => hljs.highlightAll();
+         window.scrollToEnd = () => window.scrollTo(0, document.body.scrollHeight);
+      </script>
+
+    <script>
+        function copyToClipboard(id) {
+            const code = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                console.log('Code copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
     <script src="_framework/blazor.web.js"></script>
+
  </body>
 </html>

@@ -24,14 +24,14 @@ public class AIAgents
     static IKernelBuilder Builder => Kernel.CreateBuilder();
     public Kernel SrSoftwareAgenet => Builder.AddOpenAIChatCompletion(ModelId,Endpoint,"").Build();
     public Kernel JrSoftwareAgenet => Builder.AddOpenAIChatCompletion(ModelId,Endpoint,"").Build();
-    public IAsyncEnumerable<StreamingChatMessageContent> SrCodeAgenet(string Message)
+    public IAsyncEnumerable<StreamingChatMessageContent> SrCodeAgent(string Message)
     {
         SrChatMessages.AddUserMessage(Message);
         var result = SrSoftwareAgenet.GetRequiredService<IChatCompletionService>()
             .GetStreamingChatMessageContentsAsync(SrChatMessages,null,SrSoftwareAgenet);
         return result;
     }
-    public IAsyncEnumerable<StreamingChatMessageContent> JrCodeAgenet(string Message)
+    public IAsyncEnumerable<StreamingChatMessageContent> JrCodeAgent(string Message)
     {
         JrChatMessages.AddUserMessage(Message);
         var result = SrSoftwareAgenet.GetRequiredService<IChatCompletionService>()

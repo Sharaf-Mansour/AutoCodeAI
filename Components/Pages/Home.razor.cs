@@ -1,7 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.JSInterop;
 using System.Text.RegularExpressions;
 using AutoCodeAI.Services;
@@ -29,10 +26,10 @@ public partial class Home
     }
     async ValueTask<string> SeniorAI(string Message)
     {
-        var x = AIAgents.SrCodeAgenet(Message);
+        var CodeAgent = AIAgents.SrCodeAgent(Message);
         var chatMessage = "";
         Response += Environment.NewLine;
-        await foreach (var content in x)
+        await foreach (var content in CodeAgent)
         {
             chatMessage += content.Content;
             Response += content.Content;
@@ -42,15 +39,15 @@ public partial class Home
         }
         AIAgents.SrChatMessages.AddAssistantMessage(chatMessage);
         ProcessedString = ParseHtmlContent(Response);
-      
+
         return chatMessage;
     }
     async ValueTask<string> JunoirAI(string Message)
     {
-        var x = AIAgents.JrCodeAgenet(Message);
+        var CodeAgent = AIAgents.JrCodeAgent(Message);
         var chatMessage = "";
         Response += Environment.NewLine;
-        await foreach (var content in x)
+        await foreach (var content in CodeAgent)
         {
             chatMessage += content.Content;
             Response += content.Content;
@@ -68,33 +65,31 @@ public partial class Home
     {
         ProcessedString = null;
         Response = "";
-            var SrAnswer = await SeniorAI(Message??"");
+        var SrAnswer = await SeniorAI(Message ?? "");
+        await _js.InvokeVoidAsync("scrollToEnd");
+        static bool IsTaskComplete(string answer) => answer.Contains(AIAgents.TASK_COMPLETE_PHRASE, StringComparison.CurrentCultureIgnoreCase);
+        while (true)
+        {
+            Response += Environment.NewLine + "<hr/>" + Environment.NewLine + "JR AI: ";
+            var JrAnswer = await JunoirAI(SrAnswer);
             await _js.InvokeVoidAsync("scrollToEnd");
- 
-            static bool IsTaskComplete(string answer) => answer.Contains(AIAgents.TASK_COMPLETE_PHRASE, StringComparison.CurrentCultureIgnoreCase);
 
-            while (true)
-            {
-                Response += Environment.NewLine + "<hr/>" + Environment.NewLine + "JR AI: ";
-                var JrAnswer = await JunoirAI(SrAnswer);
-                await _js.InvokeVoidAsync("scrollToEnd");
+            if (IsTaskComplete(JrAnswer)) break;
+            else Console.WriteLine("False");
+            Response += Environment.NewLine + "<hr/>" + Environment.NewLine + "SR AI: ";
+            SrAnswer = await SeniorAI(JrAnswer);
+            await _js.InvokeVoidAsync("scrollToEnd");
 
-                if (IsTaskComplete(JrAnswer)) break;
-                else Console.WriteLine("False");
-                Response += Environment.NewLine + "<hr/>" + Environment.NewLine + "SR AI: ";
-                SrAnswer = await SeniorAI(JrAnswer);
-                await _js.InvokeVoidAsync("scrollToEnd");
+            if (IsTaskComplete(SrAnswer)) break;
+            else Console.WriteLine("False");
+        }
 
-                if (IsTaskComplete(SrAnswer)) break;
-                else Console.WriteLine("False");
-            }
- 
         await InvokeAsync(StateHasChanged);
         var timer = new System.Timers.Timer(20);
         timer.Elapsed += async (sender, e) =>
         {
             await _js.InvokeVoidAsync("highlightSnippet");
- 
+
             timer.Stop();
         };
         timer.Start();

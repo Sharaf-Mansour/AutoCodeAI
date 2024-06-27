@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using OllamaSharp
 @using System.Text.RegularExpressions
 @attribute [StreamRendering]
 
@@ -7,7 +6,7 @@
     <div class="row my-5 mx-1">
      <InputTextArea type="text" id="message" placeholder="Give me a task..."  class="form-control  text-white bg-dark fs-3" @bind-Value="Message" />
     </div>
-    <button type="submit" class="btn btn-success form-control text-dark fs-5 fw-bolder mb-2 px-5 bt-lg" @onclick="DoAiStuff">Ask AI</button>
+    <button @onclick="DoAiStuff" type="submit" class="btn btn-success form-control text-dark fs-5 fw-bolder mb-2 px-5 bt-lg">Ask AI</button>
     <div class="row mt-5">
         <div class="col">
             <div style="white-space: pre-wrap;word-wrap: break-word;"> @((MarkupString)(Response is "" or null ? (MarkupString)Wait : (ProcessedString is null) ? (MarkupString)Response : ProcessedString)) </div>

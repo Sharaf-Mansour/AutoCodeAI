@@ -8,10 +8,8 @@ public partial class Home
 {
     string? Message { get; set; }
     string? Response { get; set; }
-    string Wait { get; set; } = "Ready! Ask me anything!";
-    MarkupString? ProcessedString { get; set; }
     int Num = 0;
-    public MarkupString ParseHtmlContent(string input)
+    public string ParseHtmlContent(string input)
     {
         Num++;
         var pattern = @"```(.*?)\n(.*?)```";
@@ -22,7 +20,7 @@ public partial class Home
             var code = match.Groups[2].Value.Trim();
             return $"<div>\r\n<button class=\"btn btn-info\" onclick=\"copyToClipboard('id{Num}')\">Copy</button>\r\n   <pre><code id='id{Num}' class=\"{lang}\">{System.Net.WebUtility.HtmlEncode(code)}</code></pre></div>";
         });
-        return new MarkupString(result);
+        return (result);
     }
     async ValueTask<string> SeniorAI(string Message)
     {
@@ -31,14 +29,14 @@ public partial class Home
         Response += Environment.NewLine;
         await foreach (var content in CodeAgent)
         {
-            chatMessage += content.Content;
-            Response += content.Content;
+            chatMessage += content?.Content;
+            Response += content?.Content;
             await InvokeAsync(StateHasChanged);
             await _js.InvokeVoidAsync("scrollToEnd");
 
         }
         AIAgents.SrChatMessages.AddAssistantMessage(chatMessage);
-        ProcessedString = ParseHtmlContent(Response);
+        Response = ParseHtmlContent(Response);
 
         return chatMessage;
     }
@@ -49,21 +47,20 @@ public partial class Home
         Response += Environment.NewLine;
         await foreach (var content in CodeAgent)
         {
-            chatMessage += content.Content;
-            Response += content.Content;
+            chatMessage += content?.Content;
+            Response += content?.Content;
             await InvokeAsync(StateHasChanged);
             await _js.InvokeVoidAsync("scrollToEnd");
 
         }
         AIAgents.JrChatMessages.AddAssistantMessage(chatMessage);
-        ProcessedString = ParseHtmlContent(Response);
+        Response = ParseHtmlContent(Response);
         return chatMessage;
     }
 
 
     async Task DoAiStuff()
     {
-        ProcessedString = null;
         Response = "";
         var SrAnswer = await SeniorAI(Message ?? "");
         await _js.InvokeVoidAsync("scrollToEnd");

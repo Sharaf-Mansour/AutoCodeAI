@@ -1,6 +1,6 @@
 ﻿@page "/"
 @using System.Text.RegularExpressions
-@attribute [StreamRendering]
+@attribute [StreamRendering(true)]
 
 <EditForm Enhance Model="this" class="fs-2 container-fluid mt-5  bg-dark">
     <div class="row my-5 mx-1">
@@ -9,7 +9,9 @@
     <button @onclick="DoAiStuff" type="submit" class="btn btn-success form-control text-dark fs-5 fw-bolder mb-2 px-5 bt-lg">Ask AI</button>
     <div class="row mt-5">
         <div class="col">
-            <div style="white-space: pre-wrap;word-wrap: break-word;"> @((MarkupString)(Response is "" or null ? (MarkupString)Wait : (ProcessedString is null) ? (MarkupString)Response : ProcessedString)) </div>
+            <div style="white-space: pre-wrap;word-wrap: break-word;">           
+                @((MarkupString)(Response ?? "ASK ME ANYTHING!"))      
+            </div>
         </div>
     </div>
-</EditForm>
+  </EditForm>

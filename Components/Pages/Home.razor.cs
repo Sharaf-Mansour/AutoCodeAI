@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using OllamaSharp;
+using OllamaSharp.Models;
+using OllamaSharp.Streamer;
 using System;
+using System.IO;
 using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -44,29 +47,35 @@ public partial class Home
         //{
         if (firstRender)
         {
-            string SrContent = "When I give you a big task you split it into sub-task please break down the Task into the next sub-task, and create a concise and detailed prompt for a subagent so it can execute that task. " +
-             "IMPORTANT!!! when dealing with code tasks make sure you check the code for errors and provide fixes and support as part of the next sub-task. " +
-             "If the objective is not yet fully achieved, break it down into the next sub-task " +
-             "If you find any bugs or have suggestions for better code, please include them in the next sub-task prompt. " +
-             "Please assess if the TASKS!! has been fully achieved and if so then say '" + TASK_COMPLETE_PHRASE + "'. If the previous sub-task results comprehensively address all aspects of the objective, " +
-             "IMPORTANT!!! Make sure to include the phrase '" + TASK_COMPLETE_PHRASE + "' at the beginning of your response."+
-             "Everytime please check if all tasks is complete or not. before you respond. ";
-            
+            string SrContent = "You are Coordinator AI (Coord-AI). Your role is to receive tasks from LORD ARORA and delegate them to other specialized AI agents. Ensure that each task is tracked and completed by the relevant AI agents. Provide clear and structured instructions and track progress across all tasks. ";        
             string SrPrompt = $"""
-            You are an AI orchestrator that breaks down objectives you are givin into sub-tasks. Do not do anything other than you are asked to do. focus on tasks only. and everytime check if the tasks is complete. and if they are 100% done just say {TASK_COMPLETE_PHRASE}
-             {SrContent}
-             now if you understand your job, say I am ready!
+            You are Coordinator AI (Coord-AI). Your role is to receive tasks and delegate them to other specialized AI agents. Ensure that each task is tracked and completed by the relevant AI agents. Provide clear and structured instructions and track progress across all tasks. 
             """;
-            SeniorContext = Context = await Ollama.StreamCompletion(SrPrompt, SeniorContext, async stream => Console.Write(stream.Response));
-
-
+            SeniorContext = Context = await Ollama.StreamCompletion(new()
+            {
+                Prompt = "say I am ready",
+                Model = Ollama.SelectedModel,
+                Stream = true,
+                System = SrPrompt,
+                Context = SeniorContext?.Context ?? Array.Empty<long>(),
+            }, new ActionResponseStreamer<GenerateCompletionResponseStream?>(new Action<GenerateCompletionResponseStream?>(
+                stream =>  Console.Write(stream.Response))));
             string JrPrompt = $"""    
-            You are an AI Agentic Programmer that write code, You get orders from another agentic AI, and you have to follow the orders and complete the task.
-            If the Agentic AI promot you that your task is complete just say '{TASK_COMPLETE_PHRASE}'
-            Everytime please check if all tasks is complete or not. before you respond. 
-             now if you understand your job, say I am ready!
+            You are Developer Assistant AI (Dev-AI). Your role is to assist developers by providing code suggestions, debugging assistance, and code reviews as assigned by the Coordinator AI. You are limited to understanding and providing solutions within predefined programming languages and frameworks. Always provide accurate, formatted code snippets and debugging advice.
             """;
-            JunoirContext = await Ollama.StreamCompletion(JrPrompt, JunoirContext, async stream => Console.Write(stream.Response));
+            JunoirContext = Context = await Ollama.StreamCompletion(new()
+            {
+                Prompt = "If you understand your role say nothing but 'I am ready'",
+                Model = Ollama.SelectedModel,
+                Stream = true,
+                System = JrPrompt,
+                Context = JunoirContext?.Context ?? Array.Empty<long>(),
+
+            }, new ActionResponseStreamer<GenerateCompletionResponseStream?>(new Action<GenerateCompletionResponseStream?>(
+               async stream => Console.Write(stream.Response))));
+
+
+
             Wait = "Ready! Ask me anything!";
             await InvokeAsync(StateHasChanged);
 
@@ -74,7 +83,7 @@ public partial class Home
     }
     async ValueTask<string> SeniorAI(string Message)
     {
-        var AiAnswer = "";
+        var AiAnswer = "If you understand your role say nothing but 'I am ready'";
         Context = await Ollama.StreamCompletion(Message, SeniorContext, async stream =>
         {
             AiAnswer += stream.Response;
@@ -134,9 +143,7 @@ public partial class Home
             await _js.InvokeVoidAsync("scrollToEnd");
             ShouldRender = false;
             bool IsTaskComplete(string answer) => answer.ToLower().Contains(TASK_COMPLETE_PHRASE);
-            var AgenticWorkflow2 = Task.Run(async () =>
-            {
-
+ 
                 while (true)
                 {
                     Response += Environment.NewLine + "<hr/>" + Environment.NewLine + "JR AI: ";
@@ -153,9 +160,7 @@ public partial class Home
                     else Console.WriteLine("False");
                 }
             });
-            Task.WaitAll(AgenticWorkflow2);
-        });
-
+ 
 
         var delayTask = Task.Run(async () =>
         {

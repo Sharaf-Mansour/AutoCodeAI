@@ -3,10 +3,12 @@ using System.ComponentModel;
 namespace AutoCodeAI.Services;
 
 public class CodePlugin
-{
-    [KernelFunction("save_code")]
+{   
+    [KernelFunction]
     [Description("Saves code to local file")]
-    public async Task SaveCodeAsync(string code,string fileName
+    public async Task SaveCodeAsync([Description("The genrated code")]
+string code, [Description("The file name with its type extention for examble code.js")]
+string fileName
     )
     {
         Console.WriteLine("Did this shit work?");

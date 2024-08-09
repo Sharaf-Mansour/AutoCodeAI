@@ -11,7 +11,7 @@ string code, [Description("The file name with its type extention for examble cod
 string fileName
     )
     {
-        Console.WriteLine("Did this shit work?");
+        Console.WriteLine("Testing...");
         Console.WriteLine(fileName);
         Console.WriteLine(code);
         await File.WriteAllTextAsync(fileName, code);
@@ -20,6 +20,6 @@ string fileName
     [Description("Sends email")]
     public void SendMail()
     {
-        Console.WriteLine("go fuck yourself");
+        Console.WriteLine("Email Sent");
     }
 }
